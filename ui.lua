@@ -1500,6 +1500,13 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 
     DropdownAsset.Title.Text = Dropdown.Name
     DropdownAsset.Title.Visible = not Dropdown.HideName
+    DropdownAsset.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    
+    -- Ensure the value text is visible
+    if DropdownAsset.Background and DropdownAsset.Background:FindFirstChild("Value") then
+        DropdownAsset.Background.Value.TextColor3 = Color3.fromRGB(200, 200, 200)
+        DropdownAsset.Background.Value.TextStrokeTransparency = 0.8
+    end
 
     -- Simple click/tap to toggle dropdown
     DropdownAsset.MouseButton1Click:Connect(function()
@@ -1575,6 +1582,10 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         OptionAsset.ZIndex = 101
         OptionAsset.Active = true
         OptionAsset.Title.Text = Option.Name
+        OptionAsset.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        OptionAsset.Title.TextStrokeTransparency = 0.8
+        OptionAsset.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        OptionAsset.BackgroundTransparency = 0
         OptionAsset.Tick.BackgroundColor3 = Option.Value
             and Window.Color or Color3.fromRGB(60,60,60)
 
