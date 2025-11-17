@@ -86,51 +86,34 @@ local function MakeDraggable(Dragger, Object, OnTick, OnStop)
     local IsDragging = false
     local TouchStartId = nil
     
-    -- Handle both mouse and touch input
     local function HandleInputBegan(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 or 
            Input.UserInputType == Enum.UserInputType.Touch then
             
-            -- For touch, track the specific touch ID
             if Input.UserInputType == Enum.UserInputType.Touch then
-                TouchStartId = Input
+                TouchStartId = Input.KeyCode
             end
             
             StartPosition = UserInputService:GetMouseLocation()
-            StartDrag = Object.AbsolutePosition
+            StartDrag = Object.Position
             IsDragging = true
-            
-            -- Capture the input to prevent it from being used by other elements
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                local contextActionService = game:GetService("ContextActionService")
-                contextActionService:BindAction("CaptureTouch", function() return Enum.ContextActionResult.Sink end, 
-                    false, unpack(Enum.PlayerActions:GetEnumItems()))
-            end
         end
     end
     
     local function HandleInputChanged(Input)
         if IsDragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or 
-           (Input.UserInputType == Enum.UserInputType.Touch and TouchStartId and Input.UserInputState == Enum.UserInputState.Change)) then
+           (Input.UserInputType == Enum.UserInputType.Touch and Input.UserInputState == Enum.UserInputState.Change)) then
             
-            -- For touch, make sure we're tracking the same touch that started
             if Input.UserInputType == Enum.UserInputType.Touch and TouchStartId then
-                if Input.KeyCode ~= TouchStartId.KeyCode then
-                    return -- Different touch, ignore
+                if Input.KeyCode ~= TouchStartId then
+                    return
                 end
             end
             
             local Mouse = UserInputService:GetMouseLocation()
-            local Delta = Mouse - StartPosition 
-            StartPosition = Mouse
+            local Delta = Mouse - StartPosition
             
-            -- Apply a sensitivity multiplier for smoother dragging on mobile
-            local Sensitivity = 1.0
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                Sensitivity = 1.2 -- Slightly higher sensitivity for touch
-            end
-            
-            OnTick(Object.Position + UDim2.fromOffset(Delta.X * Sensitivity, Delta.Y * Sensitivity))
+            OnTick(StartDrag + UDim2.fromOffset(Delta.X, Delta.Y))
         end
     end
     
@@ -138,22 +121,14 @@ local function MakeDraggable(Dragger, Object, OnTick, OnStop)
         if (Input.UserInputType == Enum.UserInputType.MouseButton1) or 
            (Input.UserInputType == Enum.UserInputType.Touch and TouchStartId) then
             
-            -- For touch, make sure we're releasing the same touch that started
             if Input.UserInputType == Enum.UserInputType.Touch then
-                if TouchStartId and Input.KeyCode ~= TouchStartId.KeyCode then
-                    return -- Different touch, ignore
+                if TouchStartId and Input.KeyCode ~= TouchStartId then
+                    return
                 end
             end
             
             IsDragging = false
             StartPosition, StartDrag = nil, nil
-            
-            -- Release the input capture
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                local contextActionService = game:GetService("ContextActionService")
-                contextActionService:UnbindAction("CaptureTouch")
-            end
-            
             TouchStartId = nil
             
             if OnStop then 
@@ -162,31 +137,9 @@ local function MakeDraggable(Dragger, Object, OnTick, OnStop)
         end
     end
     
-    -- Connect events for both mouse and touch
     Dragger.InputBegan:Connect(HandleInputBegan)
     Dragger.InputEnded:Connect(HandleInputEnded)
-    
     UserInputService.InputChanged:Connect(HandleInputChanged)
-    
-    -- Additional mobile optimization: prevent context menu on long press
-    if UserInputService.TouchEnabled then
-        Dragger.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                -- Prevent default behavior that might interfere with dragging
-                local contextActionService = game:GetService("ContextActionService")
-                contextActionService:BindAction("DisableMenu", function() return Enum.ContextActionResult.Sink end, 
-                    false, Enum.PlayerActions.TouchLongPress)
-            end
-        end)
-        
-        Dragger.InputEnded:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                -- Unbind the action when done
-                local contextActionService = game:GetService("ContextActionService")
-                contextActionService:UnbindAction("DisableMenu")
-            end
-        end)
-    end
 end
 
 -- Enhanced function to make UI elements more touch-friendly
@@ -256,51 +209,34 @@ local function MakeResizeable(Dragger, Object, MinSize, OnTick, OnStop)
     local IsResizing = false
     local TouchInputId = nil
     
-    -- Handle both mouse and touch input
     local function HandleInputBegan(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 or 
            Input.UserInputType == Enum.UserInputType.Touch then
             
-            -- For touch, track the specific touch ID
             if Input.UserInputType == Enum.UserInputType.Touch then
-                TouchInputId = Input
+                TouchInputId = Input.KeyCode
             end
             
             StartPosition = UserInputService:GetMouseLocation()
             StartSize = Object.AbsoluteSize
             IsResizing = true
-            
-            -- Capture input for mobile
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                local contextActionService = game:GetService("ContextActionService")
-                contextActionService:BindAction("CaptureResizeTouch", function() 
-                    return Enum.ContextActionResult.Sink 
-                end, false, unpack(Enum.PlayerActions:GetEnumItems()))
-            end
         end
     end
     
     local function HandleInputChanged(Input)
         if IsResizing and (Input.UserInputType == Enum.UserInputType.MouseMovement or 
-           (Input.UserInputType == Enum.UserInputType.Touch and TouchInputId and Input.UserInputState == Enum.UserInputState.Change)) then
+           (Input.UserInputType == Enum.UserInputType.Touch and Input.UserInputState == Enum.UserInputState.Change)) then
             
-            -- For touch, make sure we're tracking the same touch that started
             if Input.UserInputType == Enum.UserInputType.Touch and TouchInputId then
-                if Input.KeyCode ~= TouchInputId.KeyCode then
-                    return -- Different touch, ignore
+                if Input.KeyCode ~= TouchInputId then
+                    return
                 end
             end
             
             local Mouse = UserInputService:GetMouseLocation()
             local Delta = Mouse - StartPosition
             
-            -- Apply a sensitivity multiplier for smoother resizing on mobile
-            local Sensitivity = 1.0
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                Sensitivity = 1.1 -- Slightly higher sensitivity for touch
-            end
-            
-            local Size = StartSize + (Delta * Sensitivity)
+            local Size = StartSize + Delta
             local SizeX = math.max(MinSize.X, Size.X)
             local SizeY = math.max(MinSize.Y, Size.Y)
             
@@ -312,10 +248,9 @@ local function MakeResizeable(Dragger, Object, MinSize, OnTick, OnStop)
         if (Input.UserInputType == Enum.UserInputType.MouseButton1) or 
            (Input.UserInputType == Enum.UserInputType.Touch and TouchInputId) then
             
-            -- For touch, make sure we're releasing the same touch that started
             if Input.UserInputType == Enum.UserInputType.Touch then
-                if TouchInputId and Input.KeyCode ~= TouchInputId.KeyCode then
-                    return -- Different touch, ignore
+                if TouchInputId and Input.KeyCode ~= TouchInputId then
+                    return
                 end
             end
             
@@ -323,82 +258,15 @@ local function MakeResizeable(Dragger, Object, MinSize, OnTick, OnStop)
             StartPosition, StartSize = nil, nil
             TouchInputId = nil
             
-            -- Release input capture
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                local contextActionService = game:GetService("ContextActionService")
-                contextActionService:UnbindAction("CaptureResizeTouch")
-            end
-            
             if OnStop then 
                 OnStop(Object.Size) 
             end
         end
     end
     
-    -- Connect events for both mouse and touch
     Dragger.InputBegan:Connect(HandleInputBegan)
     Dragger.InputEnded:Connect(HandleInputEnded)
-    
     UserInputService.InputChanged:Connect(HandleInputChanged)
-    
-    -- Add invisible touch area for mobile to make resizing easier
-    if UserInputService.TouchEnabled then
-        local touchArea = Instance.new("Frame")
-        touchArea.Name = "MobileResizeArea"
-        touchArea.BackgroundTransparency = 1
-        touchArea.Size = UDim2.new(1, 30, 1, 30) -- Larger touch area
-        touchArea.Position = UDim2.new(0, -15, 0, -15) -- Centered on resize handle
-        touchArea.ZIndex = Dragger.ZIndex
-        touchArea.Parent = Dragger
-        
-        -- Forward input events to the resize handle
-        touchArea.InputBegan:Connect(function(Input)
-            Dragger.InputBegan:Fire(Input)
-        end)
-        touchArea.InputEnded:Connect(function(Input)
-            Dragger.InputEnded:Fire(Input)
-        end)
-        touchArea.InputChanged:Connect(function(Input)
-            Dragger.InputChanged:Fire(Input)
-        end)
-        
-        -- Add visual feedback for mobile resizing
-        local resizeIndicator = Instance.new("Frame")
-        resizeIndicator.Name = "ResizeIndicator"
-        resizeIndicator.Size = UDim2.new(0, 20, 0, 20)
-        resizeIndicator.Position = UDim2.new(0.5, -10, 0.5, -10)
-        resizeIndicator.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-        resizeIndicator.BackgroundTransparency = 0.7
-        resizeIndicator.BorderSizePixel = 0
-        resizeIndicator.ZIndex = Dragger.ZIndex + 1
-        resizeIndicator.Visible = false
-        resizeIndicator.Parent = Dragger
-        
-        -- Show/hide indicator on touch
-        Dragger.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                resizeIndicator.Visible = true
-                game:GetService("TweenService"):Create(
-                    resizeIndicator,
-                    TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                    {BackgroundTransparency = 0.3}
-                ):Play()
-            end
-        end)
-        
-        Dragger.InputEnded:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                game:GetService("TweenService"):Create(
-                    resizeIndicator,
-                    TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                    {BackgroundTransparency = 0.7}
-                ):Play()
-                
-                wait(0.2)
-                resizeIndicator.Visible = false
-            end
-        end)
-    end
 end
 
 local function ChooseTab(ScreenAsset,TabButtonAsset,TabAsset)
@@ -1581,20 +1449,10 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         OptionAsset.Parent = ScrollingFrame
         OptionAsset.ZIndex = 101
         OptionAsset.Active = true
-        
-        -- Ensure Title text is visible
-        if OptionAsset:FindFirstChild("Title") then
-            OptionAsset.Title.Text = Option.Name
-            OptionAsset.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-            OptionAsset.Title.TextStrokeTransparency = 0.5
-            OptionAsset.Title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            OptionAsset.Title.Visible = true
-        end
-        
-        if OptionAsset:FindFirstChild("Tick") then
-            OptionAsset.Tick.BackgroundColor3 = Option.Value
-                and Window.Color or Color3.fromRGB(60,60,60)
-        end
+        OptionAsset.Title.Text = Option.Name
+        OptionAsset.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        OptionAsset.Tick.BackgroundColor3 = Option.Value
+            and Window.Color or Color3.fromRGB(60,60,60)
 
         Option.ColorConfig = {Option.Value,"BackgroundColor3"}
         Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
