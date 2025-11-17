@@ -1583,11 +1583,27 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         OptionAsset.Active = true
         OptionAsset.Title.Text = Option.Name
         OptionAsset.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        OptionAsset.Title.TextStrokeTransparency = 0.8
+        OptionAsset.Title.TextStrokeTransparency = 0.5
+        OptionAsset.Title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        OptionAsset.Title.TextXAlignment = Enum.TextXAlignment.Left
+        OptionAsset.Title.TextYAlignment = Enum.TextYAlignment.Center
+        OptionAsset.Title.Font = Enum.Font.Gotham
+        OptionAsset.Title.TextSize = 14
+        OptionAsset.Title.Size = UDim2.new(1, -25, 1, 0)
+        OptionAsset.Title.Position = UDim2.new(0, 5, 0, 0)
+        OptionAsset.Title.BackgroundTransparency = 1
+        OptionAsset.Title.ZIndex = 102
         OptionAsset.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         OptionAsset.BackgroundTransparency = 0
+        OptionAsset.BorderSizePixel = 0
+        OptionAsset.Size = UDim2.new(1, -4, 0, 28)
         OptionAsset.Tick.BackgroundColor3 = Option.Value
             and Window.Color or Color3.fromRGB(60,60,60)
+        OptionAsset.Tick.Size = UDim2.new(0, 16, 0, 16)
+        OptionAsset.Tick.Position = UDim2.new(1, -20, 0.5, -8)
+        OptionAsset.Tick.ZIndex = 102
+        OptionAsset.Tick.BorderSizePixel = 1
+        OptionAsset.Tick.BorderColor3 = Color3.fromRGB(50, 50, 50)
 
         Option.ColorConfig = {Option.Value,"BackgroundColor3"}
         Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
