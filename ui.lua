@@ -1582,50 +1582,19 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         OptionAsset.ZIndex = 101
         OptionAsset.Active = true
         
-        -- Find or create Title TextLabel
-        local titleLabel = OptionAsset:FindFirstChild("Title")
-        if not titleLabel then
-            -- Create title label if it doesn't exist
-            titleLabel = Instance.new("TextLabel")
-            titleLabel.Name = "Title"
-            titleLabel.Parent = OptionAsset
+        -- Ensure Title text is visible
+        if OptionAsset:FindFirstChild("Title") then
+            OptionAsset.Title.Text = Option.Name
+            OptionAsset.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            OptionAsset.Title.TextStrokeTransparency = 0.5
+            OptionAsset.Title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            OptionAsset.Title.Visible = true
         end
         
-        titleLabel.Text = Option.Name
-        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleLabel.TextStrokeTransparency = 0.5
-        titleLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        titleLabel.TextYAlignment = Enum.TextYAlignment.Center
-        titleLabel.Font = Enum.Font.Gotham
-        titleLabel.TextSize = 14
-        titleLabel.Size = UDim2.new(1, -25, 1, 0)
-        titleLabel.Position = UDim2.new(0, 5, 0, 0)
-        titleLabel.BackgroundTransparency = 1
-        titleLabel.ZIndex = 102
-        
-        OptionAsset.Title = titleLabel
-        OptionAsset.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        OptionAsset.BackgroundTransparency = 0
-        OptionAsset.BorderSizePixel = 0
-        OptionAsset.Size = UDim2.new(1, -4, 0, 28)
-        
-        -- Find or create Tick
-        local tick = OptionAsset:FindFirstChild("Tick")
-        if not tick then
-            tick = Instance.new("Frame")
-            tick.Name = "Tick"
-            tick.Parent = OptionAsset
+        if OptionAsset:FindFirstChild("Tick") then
+            OptionAsset.Tick.BackgroundColor3 = Option.Value
+                and Window.Color or Color3.fromRGB(60,60,60)
         end
-        
-        tick.BackgroundColor3 = Option.Value and Window.Color or Color3.fromRGB(60,60,60)
-        tick.Size = UDim2.new(0, 16, 0, 16)
-        tick.Position = UDim2.new(1, -20, 0.5, -8)
-        tick.ZIndex = 102
-        tick.BorderSizePixel = 1
-        tick.BorderColor3 = Color3.fromRGB(50, 50, 50)
-        
-        OptionAsset.Tick = tick
 
         Option.ColorConfig = {Option.Value,"BackgroundColor3"}
         Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
