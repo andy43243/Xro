@@ -1313,266 +1313,307 @@ function Assets:ToggleKeybind(Parent,ScreenAsset,Window,Keybind,Toggle)
 	end)
 end
 function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
-    local OptionContainerAsset = GetAsset("Dropdown/OptionContainer")
-    local DropdownAsset = GetAsset("Dropdown/Dropdown")
+	local OptionContainerAsset = GetAsset("Dropdown/OptionContainer")
+	local DropdownAsset = GetAsset("Dropdown/Dropdown")
 
-    -- Create ScrollingFrame for dropdown options
-    local ScrollingFrame = Instance.new("ScrollingFrame")
-    ScrollingFrame.Name = "ScrollingFrame"
-    ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-    ScrollingFrame.Position = UDim2.new(0, 0, 0, 0)
-    ScrollingFrame.BackgroundTransparency = 1
-    ScrollingFrame.BorderSizePixel = 0
-    ScrollingFrame.ScrollBarThickness = 6
-    ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-    ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-    ScrollingFrame.ScrollingEnabled = true
-    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    ScrollingFrame.Active = true
-    ScrollingFrame.ZIndex = 10
-    
-    local ListLayout = Instance.new("UIListLayout")
-    ListLayout.Name = "ListLayout"
-    ListLayout.Padding = UDim.new(0, 2)
-    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ListLayout.Parent = ScrollingFrame
-    
-    -- Move existing children to the ScrollingFrame
-    for _, child in pairs(OptionContainerAsset:GetChildren()) do
-        if child:IsA("GuiObject") and child.Name ~= "ListLayout" then
-            child.Parent = ScrollingFrame
-        end
-    end
-    
-    -- Remove the old ListLayout if it exists
-    local oldListLayout = OptionContainerAsset:FindFirstChild("ListLayout")
-    if oldListLayout then
-        oldListLayout:Destroy()
-    end
-    
-    ScrollingFrame.Parent = OptionContainerAsset
-    
-    -- Auto-update canvas size when content changes
-    ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y)
-    end)
+	local ScrollingFrame = Instance.new("ScrollingFrame")
+	ScrollingFrame.Name = "ScrollingFrame"
+	ScrollingFrame.Size = UDim2.new(1,0,1,0)
+	ScrollingFrame.Position = UDim2.new(0,0,0,0)
+	ScrollingFrame.BackgroundTransparency = 1
+	ScrollingFrame.BorderSizePixel = 0
+	ScrollingFrame.ScrollBarThickness = 4
+	ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100,100,100)
+	ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+	ScrollingFrame.ScrollingEnabled = true
+	ScrollingFrame.ElasticBehavior = Enum.ElasticBehavior.Always
+	ScrollingFrame.Visible = true
 
-    Dropdown.Internal.Value = {}
-    local ContainerRender = nil
+	local ListLayout = Instance.new("UIListLayout")
+	ListLayout.Name = "ListLayout"
+	ListLayout.Padding = UDim.new(0,2)
+	ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	ListLayout.Parent = ScrollingFrame
 
-    DropdownAsset.Parent = Parent
-    OptionContainerAsset.Parent = ScreenAsset
-    OptionContainerAsset.Visible = false
-    OptionContainerAsset.ZIndex = 100
-    OptionContainerAsset.Active = true
+	for _,Child in pairs(OptionContainerAsset:GetChildren()) do
+		if Child:IsA("GuiObject") and Child.Name ~= "ListLayout" then
+			Child.Parent = ScrollingFrame
+		end
+	end
 
-    DropdownAsset.Title.Text = Dropdown.Name
-    DropdownAsset.Title.Visible = not Dropdown.HideName
-    DropdownAsset.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    
-    -- Ensure the value text is visible
-    if DropdownAsset.Background and DropdownAsset.Background:FindFirstChild("Value") then
-        DropdownAsset.Background.Value.TextColor3 = Color3.fromRGB(200, 200, 200)
-        DropdownAsset.Background.Value.TextStrokeTransparency = 0.8
-    end
+	local OldListLayout = OptionContainerAsset:FindFirstChild("ListLayout")
+	if OldListLayout then
+		OldListLayout:Destroy()
+	end
 
-    -- Simple click/tap to toggle dropdown
-    DropdownAsset.MouseButton1Click:Connect(function()
-        if not OptionContainerAsset.Visible then
-            if ScrollingFrame.ListLayout.AbsoluteContentSize.Y ~= 0 then
-                OptionContainerAsset.Visible = true
-                
-                -- Position the dropdown container below the dropdown button
-                OptionContainerAsset.Position = UDim2.fromOffset(
-                    DropdownAsset.Background.AbsolutePosition.X + 1,
-                    DropdownAsset.Background.AbsolutePosition.Y + DropdownAsset.Background.AbsoluteSize.Y + 2
-                )
-                
-                -- Set a max height for the dropdown with scrolling
-                local maxHeight = 150
-                local contentHeight = ScrollingFrame.ListLayout.AbsoluteContentSize.Y
-                local actualHeight = math.min(contentHeight, maxHeight)
-                
-                OptionContainerAsset.Size = UDim2.fromOffset(
-                    DropdownAsset.Background.AbsoluteSize.X - 2,
-                    actualHeight
-                )
-                
-                -- Ensure scrolling frame canvas is updated
-                ScrollingFrame.CanvasSize = UDim2.fromOffset(0, contentHeight)
-            end
-        else
-            OptionContainerAsset.Visible = false
-        end
-    end)
+	ScrollingFrame.Parent = OptionContainerAsset
 
-    DropdownAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-        DropdownAsset.Title.Size = Dropdown.HideName and UDim2.fromScale(1,0)
-            or UDim2.new(1,0,0,DropdownAsset.Title.TextBounds.Y + 2)
+	Dropdown.Internal.Value = {}
+	local ContainerRender = nil
 
-        DropdownAsset.Background.Position = UDim2.new(0.5,0,0,DropdownAsset.Title.Size.Y.Offset)
-        DropdownAsset.Size = UDim2.new(1,0,0,DropdownAsset.Title.Size.Y.Offset + DropdownAsset.Background.Size.Y.Offset)
-    end)
+	DropdownAsset.Parent = Parent
+	OptionContainerAsset.Parent = ScreenAsset
 
-    local function RefreshSelected()
-        table.clear(Dropdown.Internal.Value)
+	DropdownAsset.Title.Text = Dropdown.Name
+	DropdownAsset.Title.Visible = not Dropdown.HideName
+	DropdownAsset.Title.TextColor3 = Color3.fromRGB(255,255,255)
+	if DropdownAsset.Background and DropdownAsset.Background:FindFirstChild("Value") then
+		DropdownAsset.Background.Value.TextColor3 = Color3.fromRGB(200,200,200)
+		DropdownAsset.Background.Value.TextStrokeTransparency = 0.8
+	end
 
-        for Index,Option in pairs(Dropdown.List) do
-            if Option.Value then
-                table.insert(Dropdown.Internal.Value,Option.Name)
-            end
-        end
+	local function ToggleDropdown()
+		if not OptionContainerAsset.Visible and ScrollingFrame.ListLayout.AbsoluteContentSize.Y ~= 0 then
+			OptionContainerAsset.Visible = true
+			local DropdownPosition = UDim2.fromOffset(
+				DropdownAsset.Background.AbsolutePosition.X + 1,
+				DropdownAsset.Background.AbsolutePosition.Y + DropdownAsset.Background.AbsoluteSize.Y + 2
+			)
 
-        Window.Flags[Dropdown.Flag] = Dropdown.Internal.Value
-        DropdownAsset.Background.Value.Text = #Dropdown.Internal.Value == 0
-            and "..." or table.concat(Dropdown.Internal.Value,", ")
-    end
+			local MaxHeight = 150
+			local ContentHeight = ScrollingFrame.ListLayout.AbsoluteContentSize.Y
+			local ActualHeight = math.min(ContentHeight,MaxHeight)
 
-    local function SetValue(Option,Value)
-        Option.Value = Value
-        Option.ColorConfig[1] = Value
-        Option.Object.Tick.BackgroundColor3 = Value
-            and Window.Color or Color3.fromRGB(60,60,60)
-    end
+			OptionContainerAsset.Position = DropdownPosition
+			OptionContainerAsset.Size = UDim2.fromOffset(
+				DropdownAsset.Background.AbsoluteSize.X,
+				ActualHeight + 4
+			)
 
-    local function AddOption(Option,AddToList,Order)
-        Option = GetType(Option,{},"table",true)
-        Option.Name = GetType(Option.Name,"Option","string")
-        Option.Mode = GetType(Option.Mode,"Button","string")
-        Option.Value = GetType(Option.Value,false,"boolean")
-        Option.Callback = GetType(Option.Callback,function() end,"function")
+			ScrollingFrame.Size = UDim2.new(1,0,1,0)
+			ScrollingFrame.CanvasSize = UDim2.new(0,0,0,ContentHeight)
 
-        local OptionAsset = GetAsset("Dropdown/Option")
-        Option.Object = OptionAsset
+			if UserInputService.TouchEnabled then
+				local CloseTouchArea = Instance.new("TextButton")
+				CloseTouchArea.Name = "MobileCloseArea"
+				CloseTouchArea.BackgroundTransparency = 1
+				CloseTouchArea.Size = UDim2.new(1,0,1,0)
+				CloseTouchArea.ZIndex = 5
+				CloseTouchArea.Parent = ScreenAsset
+				CloseTouchArea.MouseButton1Click:Connect(function()
+					OptionContainerAsset.Visible = false
+					CloseTouchArea:Destroy()
+				end)
+			end
+		else
+			OptionContainerAsset.Visible = false
+			local CloseArea = ScreenAsset:FindFirstChild("MobileCloseArea")
+			if CloseArea then
+				CloseArea:Destroy()
+			end
+		end
+	end
 
-        OptionAsset.LayoutOrder = Order
-        OptionAsset.Parent = ScrollingFrame
-        OptionAsset.ZIndex = 101
-        OptionAsset.Active = true
+	DropdownAsset.MouseButton1Click:Connect(function()
+		ToggleDropdown()
+	end)
+
+	if UserInputService.TouchEnabled then
+		local TouchStartPos,TouchStartTime,IsSwiping
+
+		DropdownAsset.InputBegan:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.Touch then
+				TouchStartPos = Input.Position
+				TouchStartTime = os.clock()
+				IsSwiping = false
+			end
+		end)
+
+		DropdownAsset.InputChanged:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.Touch and TouchStartPos then
+				local Delta = (Input.Position - TouchStartPos).Magnitude
+				if Delta > 10 then
+					IsSwiping = true
+				end
+			end
+		end)
+
+		DropdownAsset.InputEnded:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.Touch and TouchStartPos and not IsSwiping then
+				local TouchDuration = os.clock() - TouchStartTime
+				if TouchDuration < 0.5 then
+					ToggleDropdown()
+				end
+			end
+			TouchStartPos = nil
+			IsSwiping = false
+		end)
+	end
+
+	DropdownAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+		DropdownAsset.Title.Size = Dropdown.HideName and UDim2.fromScale(1,0)
+			or UDim2.new(1,0,0,DropdownAsset.Title.TextBounds.Y + 2)
+
+		DropdownAsset.Background.Position = UDim2.new(0.5,0,0,DropdownAsset.Title.Size.Y.Offset)
+		DropdownAsset.Size = UDim2.new(1,0,0,DropdownAsset.Title.Size.Y.Offset + DropdownAsset.Background.Size.Y.Offset)
+	end)
+
+	ScrollingFrame.ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		ScrollingFrame.CanvasSize = UDim2.fromOffset(0,ScrollingFrame.ListLayout.AbsoluteContentSize.Y + 4)
+	end)
+
+	local function RefreshSelected()
+		table.clear(Dropdown.Internal.Value)
+
+		for Index,Option in pairs(Dropdown.List) do
+			if Option.Value then
+				table.insert(Dropdown.Internal.Value,Option.Name)
+			end
+		end
+
+		Window.Flags[Dropdown.Flag] = Dropdown.Internal.Value
+		DropdownAsset.Background.Value.Text = #Dropdown.Internal.Value == 0
+			and "..." or table.concat(Dropdown.Internal.Value,", ")
+	end
+
+	local function SetValue(Option,Value)
+		Option.Value = Value
+		Option.ColorConfig[1] = Value
+		Option.Object.Tick.BackgroundColor3 = Value
+			and Window.Color or Color3.fromRGB(60,60,60)
+	end
+
+	local function AddOption(Option,AddToList,Order)
+		Option = GetType(Option,{},"table",true)
+		Option.Name = GetType(Option.Name,"Option","string")
+		Option.Mode = GetType(Option.Mode,"Button","string")
+		Option.Value = GetType(Option.Value,false,"boolean")
+		Option.Callback = GetType(Option.Callback,function() end,"function")
+
+		local OptionAsset = GetAsset("Dropdown/Option")
+		Option.Object = OptionAsset
+
+		OptionAsset.LayoutOrder = Order
+		OptionAsset.Parent = ScrollingFrame
 		OptionAsset.Title.Text = Option.Name
-		OptionAsset.Title.TextColor3 = Color3.fromRGB(255,255,255)
-		OptionAsset.Title.TextTransparency = 0
-		OptionAsset.Title.TextStrokeTransparency = 0.6
-		OptionAsset.Title.TextStrokeColor3 = Color3.fromRGB(0,0,0)
-		OptionAsset.Title.Visible = true
-        OptionAsset.Tick.BackgroundColor3 = Option.Value
-            and Window.Color or Color3.fromRGB(60,60,60)
+		OptionAsset.Tick.BackgroundColor3 = Option.Value
+			and Window.Color or Color3.fromRGB(60,60,60)
 
-        Option.ColorConfig = {Option.Value,"BackgroundColor3"}
-        Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
-        if AddToList then table.insert(Dropdown.List,Option) end
+		Option.ColorConfig = {Option.Value,"BackgroundColor3"}
+		Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
+		if AddToList then table.insert(Dropdown.List,Option) end
 
-        -- Simple click/tap to select option
-        OptionAsset.MouseButton1Click:Connect(function()
-            Option.Value = not Option.Value
-        end)
-        
-        OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-            OptionAsset.Layout.Size = UDim2.new(1,-OptionAsset.Title.TextBounds.X - 22,1,0)
-        end)
+		local function SelectOption()
+			Option.Value = not Option.Value
+		end
 
-        Option:GetPropertyChangedSignal("Name"):Connect(function(Name)
-            OptionAsset.Title.Text = Name
-        end)
-        Option:GetPropertyChangedSignal("Value"):Connect(function(Value)
-            if Option.Mode == "Button" then
-                for Index,OldOption in pairs(Dropdown.List) do
-                    SetValue(OldOption.Internal,false)
-                end Option.Internal.Value = true
-                Value = Option.Internal.Value
-                OptionContainerAsset.Visible = false
-            end
+		OptionAsset.MouseButton1Click:Connect(SelectOption)
 
-            RefreshSelected()
-            Option.ColorConfig[1] = Value
-            Option.Object.Tick.BackgroundColor3 = Value
-                and Window.Color or Color3.fromRGB(60,60,60)
-            Option.Callback(Dropdown.Value,Option)
-        end)
+		if UserInputService.TouchEnabled then
+			OptimizeForMobile(OptionAsset,false)
+			OptionAsset.InputBegan:Connect(function(Input)
+				if Input.UserInputType == Enum.UserInputType.Touch then
+					SelectOption()
+				end
+			end)
+		end
 
-        for Index,Value in pairs(Option.Internal) do
-            if string.find(Index,"Colorpicker") then
-                Option[Index] = GetType(Option[Index],{},"table",true)
-                Option[Index].Flag = GetType(Option[Index].Flag,
-                    Dropdown.Flag .. "/" .. Option.Name .. "/Colorpicker","string")
+		OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+			OptionAsset.Layout.Size = UDim2.new(1,-OptionAsset.Title.TextBounds.X - 22,1,0)
+		end)
 
-                Option[Index].Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
-                Option[Index].Callback = GetType(Option[Index].Callback,function() end,"function")
-                Window.Elements[#Window.Elements + 1] = Option[Index]
-                Window.Flags[Option[Index].Flag] = Option[Index].Value
+		Option:GetPropertyChangedSignal("Name"):Connect(function(Name)
+			OptionAsset.Title.Text = Name
+		end)
+		Option:GetPropertyChangedSignal("Value"):Connect(function(Value)
+			if Option.Mode == "Button" then
+				for Index,OldOption in pairs(Dropdown.List) do
+					SetValue(OldOption.Internal,false)
+				end Option.Internal.Value = true
+				Value = Option.Internal.Value
+				OptionContainerAsset.Visible = false
+			end
 
-                Assets:ToggleColorpicker(OptionAsset.Layout,ScreenAsset,Window,Option[Index])
-            end
-        end
+			RefreshSelected()
+			Option.ColorConfig[1] = Value
+			Option.Object.Tick.BackgroundColor3 = Value
+				and Window.Color or Color3.fromRGB(60,60,60)
+			Option.Callback(Dropdown.Value,Option)
+		end)
 
-        return Option
-    end
+		for Index,Value in pairs(Option.Internal) do
+			if string.find(Index,"Colorpicker") then
+				Option[Index] = GetType(Option[Index],{},"table",true)
+				Option[Index].Flag = GetType(Option[Index].Flag,
+					Dropdown.Flag .. "/" .. Option.Name .. "/Colorpicker","string")
 
-    -- Dropdown Update
-    for Index,Option in pairs(Dropdown.List) do
-        Dropdown.List[Index] = AddOption(Option,false,Index)
-    end for Index,Option in pairs(Dropdown.List) do
-        if Option.Value then Option.Value = true end
-    end RefreshSelected()
+				Option[Index].Value = GetType(Option[Index].Value,{1,1,1,0,false},"table")
+				Option[Index].Callback = GetType(Option[Index].Callback,function() end,"function")
+				Window.Elements[#Window.Elements + 1] = Option[Index]
+				Window.Flags[Option[Index].Flag] = Option[Index].Value
 
-    function Dropdown:BulkAdd(Table)
-        for Index,Option in pairs(Table) do
-            AddOption(Option,true,Index)
-        end
-    end
-    function Dropdown:AddOption(Option)
-        AddOption(Option,true,#Dropdown.List)
-    end
+				Assets:ToggleColorpicker(OptionAsset.Layout,ScreenAsset,Window,Option[Index])
+			end
+		end
 
-    function Dropdown:Clear()
-        for Index,Option in pairs(Dropdown.List) do
-            Option.Object:Destroy()
-        end table.clear(Dropdown.List)
-    end
-    function Dropdown:RemoveOption(Name)
-        for Index,Option in pairs(Dropdown.List) do
-            if Option.Name == Name then
-                Option.Object:Destroy()
-                table.remove(Dropdown.List,Index)
-            end
-        end
-        for Index,Option in pairs(Dropdown.List) do
-            Option.Object.LayoutOrder = Index
-        end
-    end
-    function Dropdown:RefreshToPlayers(ToggleMode)
-        local Players = {}
-        for Index,Player in pairs(PlayerService:GetPlayers()) do
-            if Player == LocalPlayer then continue end
-            table.insert(Players,{Name = Player.Name,
-                Mode = ToggleMode == "Toggle" or "Button"
-            })
-        end
-        Dropdown:Clear()
-        Dropdown:BulkAdd(Players)
-    end
+		return Option
+	end
 
-    Dropdown:GetPropertyChangedSignal("Name"):Connect(function(Name)
-        DropdownAsset.Title.Text = Name
-    end)
-    Dropdown:GetPropertyChangedSignal("Value"):Connect(function(Value)
-        if type(Value) ~= "table" then return end
-        if #Value == 0 then RefreshSelected() return end
+	for Index,Option in pairs(Dropdown.List) do
+		Dropdown.List[Index] = AddOption(Option,false,Index)
+	end for Index,Option in pairs(Dropdown.List) do
+		if Option.Value then Option.Value = true end
+	end RefreshSelected()
 
-        for Index,Option in pairs(Dropdown.List) do
-            if table.find(Value,Option.Name) then
-                Option.Value = true
-            else
-                if Option.Mode ~= "Button" then
-                    Option.Value = false
-                end
-            end
-        end
-    end)
+	function Dropdown:BulkAdd(Table)
+		for Index,Option in pairs(Table) do
+			AddOption(Option,true,Index)
+		end
+	end
+	function Dropdown:AddOption(Option)
+		AddOption(Option,true,#Dropdown.List)
+	end
 
-    function Dropdown:ToolTip(Text)
-        Assets:ToolTip(DropdownAsset,ScreenAsset,Text)
-    end
+	function Dropdown:Clear()
+		for Index,Option in pairs(Dropdown.List) do
+			Option.Object:Destroy()
+		end table.clear(Dropdown.List)
+	end
+	function Dropdown:RemoveOption(Name)
+		for Index,Option in pairs(Dropdown.List) do
+			if Option.Name == Name then
+				Option.Object:Destroy()
+				table.remove(Dropdown.List,Index)
+			end
+		end
+		for Index,Option in pairs(Dropdown.List) do
+			Option.Object.LayoutOrder = Index
+		end
+	end
+	function Dropdown:RefreshToPlayers(ToggleMode)
+		local Players = {}
+		for Index,Player in pairs(PlayerService:GetPlayers()) do
+			if Player == LocalPlayer then continue end
+			table.insert(Players,{Name = Player.Name,
+				Mode = ToggleMode == "Toggle" or "Button"
+			})
+		end
+		Dropdown:Clear()
+		Dropdown:BulkAdd(Players)
+	end
+
+	Dropdown:GetPropertyChangedSignal("Name"):Connect(function(Name)
+		DropdownAsset.Title.Text = Name
+	end)
+	Dropdown:GetPropertyChangedSignal("Value"):Connect(function(Value)
+		if type(Value) ~= "table" then return end
+		if #Value == 0 then RefreshSelected() return end
+
+		for Index,Option in pairs(Dropdown.List) do
+			if table.find(Value,Option.Name) then
+				Option.Value = true
+			else
+				if Option.Mode ~= "Button" then
+					Option.Value = false
+				end
+			end
+		end
+	end)
+
+	function Dropdown:ToolTip(Text)
+		Assets:ToolTip(DropdownAsset,ScreenAsset,Text)
+	end
 end
 function Assets:Colorpicker(Parent,ScreenAsset,Window,Colorpicker)
 	local ColorpickerAsset = GetAsset("Colorpicker/Colorpicker")
