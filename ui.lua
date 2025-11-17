@@ -1449,8 +1449,12 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         OptionAsset.Parent = ScrollingFrame
         OptionAsset.ZIndex = 101
         OptionAsset.Active = true
-        OptionAsset.Title.Text = Option.Name
-        OptionAsset.Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		OptionAsset.Title.Text = Option.Name
+		OptionAsset.Title.TextColor3 = Color3.fromRGB(255,255,255)
+		OptionAsset.Title.TextTransparency = 0
+		OptionAsset.Title.TextStrokeTransparency = 0.6
+		OptionAsset.Title.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+		OptionAsset.Title.Visible = true
         OptionAsset.Tick.BackgroundColor3 = Option.Value
             and Window.Color or Color3.fromRGB(60,60,60)
 
