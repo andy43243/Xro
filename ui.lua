@@ -1322,13 +1322,15 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 	ScrollingFrame.Position = UDim2.new(0,0,0,0)
 	ScrollingFrame.BackgroundTransparency = 1
 	ScrollingFrame.BorderSizePixel = 0
-	ScrollingFrame.ScrollBarThickness = 4
+	ScrollingFrame.ScrollBarThickness = 6
 	ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100,100,100)
 	ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
 	ScrollingFrame.ScrollingEnabled = true
 	ScrollingFrame.ElasticBehavior = Enum.ElasticBehavior.Always
 	ScrollingFrame.Visible = true
+	ScrollingFrame.Active = true
+	ScrollingFrame.ZIndex = 101
 
 	local ListLayout = Instance.new("UIListLayout")
 	ListLayout.Name = "ListLayout"
@@ -1354,6 +1356,10 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 
 	DropdownAsset.Parent = Parent
 	OptionContainerAsset.Parent = ScreenAsset
+	OptionContainerAsset.Visible = false
+	OptionContainerAsset.ZIndex = 100
+	OptionContainerAsset.Active = true
+	OptionContainerAsset.ClipsDescendants = true
 
 	DropdownAsset.Title.Text = Dropdown.Name
 	DropdownAsset.Title.Visible = not Dropdown.HideName
@@ -1364,7 +1370,7 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 	end
 
 	local function ToggleDropdown()
-		if not OptionContainerAsset.Visible and ScrollingFrame.ListLayout.AbsoluteContentSize.Y ~= 0 then
+		if not OptionContainerAsset.Visible and ListLayout.AbsoluteContentSize.Y ~= 0 then
 			OptionContainerAsset.Visible = true
 			local DropdownPosition = UDim2.fromOffset(
 				DropdownAsset.Background.AbsolutePosition.X + 1,
@@ -1372,17 +1378,17 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 			)
 
 			local MaxHeight = 150
-			local ContentHeight = ScrollingFrame.ListLayout.AbsoluteContentSize.Y
+			local ContentHeight = ListLayout.AbsoluteContentSize.Y
 			local ActualHeight = math.min(ContentHeight,MaxHeight)
 
 			OptionContainerAsset.Position = DropdownPosition
 			OptionContainerAsset.Size = UDim2.fromOffset(
-				DropdownAsset.Background.AbsoluteSize.X,
-				ActualHeight + 4
+				DropdownAsset.Background.AbsoluteSize.X - 2,
+				ActualHeight
 			)
 
 			ScrollingFrame.Size = UDim2.new(1,0,1,0)
-			ScrollingFrame.CanvasSize = UDim2.new(0,0,0,ContentHeight)
+			ScrollingFrame.CanvasSize = UDim2.fromOffset(0,ContentHeight)
 
 			if UserInputService.TouchEnabled then
 				local CloseTouchArea = Instance.new("TextButton")
@@ -1405,41 +1411,12 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 		end
 	end
 
-	DropdownAsset.MouseButton1Click:Connect(function()
-		ToggleDropdown()
+	DropdownAsset.InputBegan:Connect(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1
+			or Input.UserInputType == Enum.UserInputType.Touch then
+			ToggleDropdown()
+		end
 	end)
-
-	if UserInputService.TouchEnabled then
-		local TouchStartPos,TouchStartTime,IsSwiping
-
-		DropdownAsset.InputBegan:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.Touch then
-				TouchStartPos = Input.Position
-				TouchStartTime = os.clock()
-				IsSwiping = false
-			end
-		end)
-
-		DropdownAsset.InputChanged:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.Touch and TouchStartPos then
-				local Delta = (Input.Position - TouchStartPos).Magnitude
-				if Delta > 10 then
-					IsSwiping = true
-				end
-			end
-		end)
-
-		DropdownAsset.InputEnded:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.Touch and TouchStartPos and not IsSwiping then
-				local TouchDuration = os.clock() - TouchStartTime
-				if TouchDuration < 0.5 then
-					ToggleDropdown()
-				end
-			end
-			TouchStartPos = nil
-			IsSwiping = false
-		end)
-	end
 
 	DropdownAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
 		DropdownAsset.Title.Size = Dropdown.HideName and UDim2.fromScale(1,0)
