@@ -353,6 +353,12 @@ function Assets:Window(ScreenAsset,Window)
 	WindowAsset.Position = Window.Position
 	WindowAsset.Size = Window.Size
 
+	-- Make title bar visible (not transparent)
+	if WindowAsset.Drag then
+		WindowAsset.Drag.BackgroundTransparency = 0.1
+		WindowAsset.Drag.BackgroundColor3 = Window.Color
+	end
+	
 	-- Primary drag on title bar
 	MakeDraggable(WindowAsset.Drag,WindowAsset,function(Position)
 		Window.Position = Position
@@ -449,51 +455,93 @@ function Assets:Window(ScreenAsset,Window)
 	ToggleStroke.Transparency = 0.5
 	ToggleStroke.Parent = ToggleButton
 	
-	-- Make toggle button draggable
-	MakeDraggable(ToggleButton, ToggleButton, function(Position)
-		ToggleButton.Position = Position
-	end)
-	
-	-- Toggle button functionality
-	ToggleButton.MouseButton1Click:Connect(function()
-		Window.Enabled = not Window.Enabled
-		-- Visual feedback
-		ToggleButton.BackgroundTransparency = Window.Enabled and 0.3 or 0.6
-	end)
-	
-	-- Mobile touch support for toggle button
-	if UserInputService.TouchEnabled then
-		local touchStartPos, isTouchDragging = nil, false
+	-- Make toggle button draggable (only after significant movement)
+	local function MakeToggleDraggable()
+		local dragStart, dragObj = nil, nil
+		local dragging = false
+		local dragTouchId = nil
 		
 		ToggleButton.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.Touch then
-				touchStartPos = input.Position
-				isTouchDragging = false
-				ToggleButton.BackgroundTransparency = 0.1
+			if input.UserInputType == Enum.UserInputType.Touch and not dragging then
+				dragStart = input.Position
+				dragObj = ToggleButton.Position
+				dragTouchId = input
 			end
 		end)
 		
-		ToggleButton.InputChanged:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.Touch and touchStartPos then
-				local delta = (input.Position - touchStartPos).Magnitude
-				if delta > 20 then
-					isTouchDragging = true
+		UserInputService.InputChanged:Connect(function(input)
+			if dragStart and dragTouchId and input.UserInputType == Enum.UserInputType.Touch then
+				if input.KeyCode == dragTouchId.KeyCode then
+					local delta = input.Position - dragStart
+					if delta.Magnitude > 10 then
+						dragging = true
+						local newPos = dragObj + UDim2.fromOffset(delta.X, delta.Y)
+						ToggleButton.Position = newPos
+					end
 				end
 			end
 		end)
 		
 		ToggleButton.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.Touch then
-				if not isTouchDragging and touchStartPos then
-					Window.Enabled = not Window.Enabled
-					ToggleButton.BackgroundTransparency = Window.Enabled and 0.3 or 0.6
+			if input.UserInputType == Enum.UserInputType.Touch and dragTouchId then
+				if input.KeyCode == dragTouchId.KeyCode then
+					task.wait(0.1)
+					dragStart = nil
+					dragObj = nil
+					dragging = false
+					dragTouchId = nil
 				end
-				ToggleButton.BackgroundTransparency = Window.Enabled and 0.3 or 0.6
-				touchStartPos = nil
-				isTouchDragging = false
 			end
 		end)
 	end
+	
+	MakeToggleDraggable()
+	
+	-- Toggle button functionality for PC
+	ToggleButton.MouseButton1Click:Connect(function()
+		Window.Enabled = not Window.Enabled
+		ToggleButton.BackgroundTransparency = Window.Enabled and 0.3 or 0.6
+	end)
+	
+	-- Separate dragging from clicking for toggle button
+	local toggleDragStartPos = nil
+	local isToggleDragging = false
+	local toggleTouchId = nil
+	
+	ToggleButton.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch then
+			toggleDragStartPos = input.Position
+			isToggleDragging = false
+			toggleTouchId = input
+			ToggleButton.BackgroundTransparency = 0.1
+		end
+	end)
+	
+	ToggleButton.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch and toggleDragStartPos and toggleTouchId then
+			if input.KeyCode == toggleTouchId.KeyCode then
+				local delta = (input.Position - toggleDragStartPos).Magnitude
+				if delta > 10 then
+					isToggleDragging = true
+				end
+			end
+		end
+	end)
+	
+	ToggleButton.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch and toggleTouchId then
+			if input.KeyCode == toggleTouchId.KeyCode then
+				if not isToggleDragging then
+					-- It's a tap, toggle the UI
+					Window.Enabled = not Window.Enabled
+				end
+				ToggleButton.BackgroundTransparency = Window.Enabled and 0.3 or 0.6
+				toggleDragStartPos = nil
+				isToggleDragging = false
+				toggleTouchId = nil
+			end
+		end
+	end)
 	
 	-- Update toggle button color when window color changes
 	Window:GetPropertyChangedSignal("Color"):Connect(function(Color)
@@ -969,27 +1017,15 @@ function Assets:Slider(Parent,ScreenAsset,Window,Slider)
         Slider.Value = Scale(ScaleX,0,1,Slider.Min,Slider.Max)
     end
 
-    if Slider.Wide then
-        SliderAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-            SliderAsset.Value.Size = UDim2.new(0,SliderAsset.Value.TextBounds.X,1,0)
-            SliderAsset.Title.Size = UDim2.new(1,-SliderAsset.Value.Size.X.Offset + 12,1,0)
-            SliderAsset.Size = UDim2.new(1,0,0,SliderAsset.Title.TextBounds.Y + 2)
-        end)
-        SliderAsset.Value:GetPropertyChangedSignal("TextBounds"):Connect(function()
-            SliderAsset.Value.Size = UDim2.new(0,SliderAsset.Value.TextBounds.X,1,0)
-            SliderAsset.Title.Size = UDim2.new(1,-SliderAsset.Value.Size.X.Offset + 12,1,0)
-        end)
-    else
-        SliderAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
-            SliderAsset.Value.Size = UDim2.fromOffset(SliderAsset.Value.TextBounds.X,16)
-            SliderAsset.Title.Size = UDim2.new(1,-SliderAsset.Value.Size.X.Offset,0,16)
-            SliderAsset.Size = UDim2.new(1,0,0,SliderAsset.Title.TextBounds.Y + 8)
-        end)
-        SliderAsset.Value:GetPropertyChangedSignal("TextBounds"):Connect(function()
-            SliderAsset.Value.Size = UDim2.fromOffset(SliderAsset.Value.TextBounds.X,16)
-            SliderAsset.Title.Size = UDim2.new(1,-SliderAsset.Value.Size.X.Offset,0,16)
-        end)
-    end
+    SliderAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
+        SliderAsset.Value.Size = UDim2.fromOffset(SliderAsset.Value.TextBounds.X,16)
+        SliderAsset.Title.Size = UDim2.new(1,-SliderAsset.Value.Size.X.Offset,0,16)
+        SliderAsset.Size = UDim2.new(1,0,0,SliderAsset.Title.TextBounds.Y + 8)
+    end)
+    SliderAsset.Value:GetPropertyChangedSignal("TextBounds"):Connect(function()
+        SliderAsset.Value.Size = UDim2.fromOffset(SliderAsset.Value.TextBounds.X,16)
+        SliderAsset.Title.Size = UDim2.new(1,-SliderAsset.Value.Size.X.Offset,0,16)
+    end)
 
     SliderAsset.Value.FocusLost:Connect(function()
         if not tonumber(SliderAsset.Value.Text) then
@@ -1003,63 +1039,42 @@ function Assets:Slider(Parent,ScreenAsset,Window,Slider)
         SliderAsset.Value.Text = ""
     end)
 
-    -- Enhanced input handling for mobile
-    SliderAsset.InputBegan:Connect(function(Input)
+    -- Better slider input for both PC and mobile
+    SliderAsset.Background.InputBegan:Connect(function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 or 
            Input.UserInputType == Enum.UserInputType.Touch then
-            
-            -- For touch, track the specific touch ID
             if Input.UserInputType == Enum.UserInputType.Touch then
                 Slider.TouchInputId = Input
             end
-            
             AttachToMouse(Input)
             Slider.Active = true
-            
-            -- Capture input for mobile
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                local contextActionService = game:GetService("ContextActionService")
-                contextActionService:BindAction("CaptureSliderTouch", function() 
-                    return Enum.ContextActionResult.Sink 
-                end, false, unpack(Enum.PlayerActions:GetEnumItems()))
-            end
         end
     end)
     
-    SliderAsset.InputEnded:Connect(function(Input)
+    SliderAsset.Background.InputEnded:Connect(function(Input)
         if (Input.UserInputType == Enum.UserInputType.MouseButton1) or 
            (Input.UserInputType == Enum.UserInputType.Touch and Slider.TouchInputId) then
-            
-            -- For touch, make sure we're releasing the same touch that started
             if Input.UserInputType == Enum.UserInputType.Touch then
                 if Slider.TouchInputId and Input.KeyCode ~= Slider.TouchInputId.KeyCode then
-                    return -- Different touch, ignore
+                    return
                 end
             end
-            
             Slider.Active = false
             Slider.TouchInputId = nil
-            
-            -- Release input capture
-            if Input.UserInputType == Enum.UserInputType.Touch then
-                local contextActionService = game:GetService("ContextActionService")
-                contextActionService:UnbindAction("CaptureSliderTouch")
-            end
         end
     end)
     
     UserInputService.InputChanged:Connect(function(Input)
-        if Slider.Active and (Input.UserInputType == Enum.UserInputType.MouseMovement or 
-           (Input.UserInputType == Enum.UserInputType.Touch and Slider.TouchInputId and Input.UserInputState == Enum.UserInputState.Change)) then
-            
-            -- For touch, make sure we're tracking the same touch that started
-            if Input.UserInputType == Enum.UserInputType.Touch and Slider.TouchInputId then
-                if Input.KeyCode ~= Slider.TouchInputId.KeyCode then
-                    return -- Different touch, ignore
+        if Slider.Active then
+            if Input.UserInputType == Enum.UserInputType.MouseMovement or 
+               (Input.UserInputType == Enum.UserInputType.Touch and Slider.TouchInputId) then
+                if Input.UserInputType == Enum.UserInputType.Touch and Slider.TouchInputId then
+                    if Input.KeyCode ~= Slider.TouchInputId.KeyCode then
+                        return
+                    end
                 end
+                AttachToMouse(Input)
             end
-            
-            AttachToMouse(Input)
         end
     end)
 
@@ -1411,11 +1426,13 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
         if not isDropdownOpen and ListLayout.AbsoluteContentSize.Y ~= 0 then
             isDropdownOpen = true
             OptionContainerAsset.Visible = true
+            OptionContainerAsset.ZIndex = 10000 -- Ensure it's on top
+            ScrollingFrame.ZIndex = 10001
             
-            -- Position the dropdown container
+            -- Position dropdown directly below the dropdown button
             local dropdownPosition = UDim2.fromOffset(
-                DropdownAsset.Background.AbsolutePosition.X + 1,
-                DropdownAsset.Background.AbsolutePosition.Y + DropdownAsset.Background.AbsoluteSize.Y + 2
+                DropdownAsset.AbsolutePosition.X,
+                DropdownAsset.AbsolutePosition.Y + DropdownAsset.AbsoluteSize.Y + 2
             )
             
             -- Set a max height for the dropdown with scrolling (mobile-friendly)
@@ -1425,12 +1442,19 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
             
             OptionContainerAsset.Position = dropdownPosition
             OptionContainerAsset.Size = UDim2.fromOffset(
-                DropdownAsset.Background.AbsoluteSize.X - 2,
+                DropdownAsset.AbsoluteSize.X,
                 actualHeight
             )
             
             -- Update scrolling frame canvas size
             ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, contentHeight)
+            
+            -- Ensure all options are visible with proper ZIndex
+            for _, option in pairs(ScrollingFrame:GetChildren()) do
+                if option:IsA("Frame") then
+                    option.ZIndex = 10002
+                end
+            end
             
             -- Mobile optimization: add backdrop to close dropdown
             if not ScreenAsset:FindFirstChild("DropdownBackdrop") then
@@ -1757,7 +1781,7 @@ function Assets:Colorpicker(Parent,ScreenAsset,Window,Colorpicker)
 			and Window.Color or Color3.fromRGB(60,60,60)
 	end)
 	PaletteAsset.SVPicker.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			if SVRender then SVRender:Disconnect() end
 			SVRender = RunService.RenderStepped:Connect(function()
 				if not PaletteAsset.Visible then SVRender:Disconnect() end
@@ -1772,7 +1796,7 @@ function Assets:Colorpicker(Parent,ScreenAsset,Window,Colorpicker)
 		end
 	end)
 	PaletteAsset.SVPicker.InputEnded:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			if SVRender then SVRender:Disconnect() end
 		end
 	end)
@@ -1911,7 +1935,7 @@ function Assets:ToggleColorpicker(Parent,ScreenAsset,Window,Colorpicker)
 			and Window.Color or Color3.fromRGB(60,60,60)
 	end)
 	PaletteAsset.SVPicker.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			if SVRender then SVRender:Disconnect() end
 			SVRender = RunService.RenderStepped:Connect(function()
 				if not PaletteAsset.Visible then SVRender:Disconnect() end
@@ -1926,12 +1950,12 @@ function Assets:ToggleColorpicker(Parent,ScreenAsset,Window,Colorpicker)
 		end
 	end)
 	PaletteAsset.SVPicker.InputEnded:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			if SVRender then SVRender:Disconnect() end
 		end
 	end)
 	PaletteAsset.Hue.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			if HueRender then HueRender:Disconnect() end
 			HueRender = RunService.RenderStepped:Connect(function()
 				if not PaletteAsset.Visible then HueRender:Disconnect() end
@@ -1943,24 +1967,24 @@ function Assets:ToggleColorpicker(Parent,ScreenAsset,Window,Colorpicker)
 		end
 	end)
 	PaletteAsset.Hue.InputEnded:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			if HueRender then HueRender:Disconnect() end
 		end
 	end)
 	PaletteAsset.Alpha.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			if AlphaRender then AlphaRender:Disconnect() end
 			AlphaRender = RunService.RenderStepped:Connect(function()
 				if not PaletteAsset.Visible then AlphaRender:Disconnect() end
 				local Mouse = UserInputService:GetMouseLocation()
 				local ColorX = math.clamp(Mouse.X - PaletteAsset.Alpha.AbsolutePosition.X,0,PaletteAsset.Alpha.AbsoluteSize.X) / PaletteAsset.Alpha.AbsoluteSize.X
-				Colorpicker.Value[4] = math.floor(ColorX * 10^2) / (10^2) -- idk %.2f little bit broken with this
+				Colorpicker.Value[4] = math.floor(ColorX * 10^2) / (10^2)
 				Colorpicker.Value = Colorpicker.Value
 			end)
 		end
 	end)
 	PaletteAsset.Alpha.InputEnded:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			if AlphaRender then AlphaRender:Disconnect() end
 		end
 	end)
