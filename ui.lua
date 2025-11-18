@@ -1458,16 +1458,22 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 		Option.Value = GetType(Option.Value,false,"boolean")
 		Option.Callback = GetType(Option.Callback,function() end,"function")
 
-		local OptionAsset = GetAsset("Dropdown/Option")
-		Option.Object = OptionAsset
+	local OptionAsset = GetAsset("Dropdown/Option")
+	Option.Object = OptionAsset
 
-		OptionAsset.LayoutOrder = Order
-		OptionAsset.Parent = ScrollingFrame
-		OptionAsset.Title.Text = Option.Name
-		OptionAsset.Tick.BackgroundColor3 = Option.Value
-			and Window.Color or Color3.fromRGB(60,60,60)
-
-		Option.ColorConfig = {Option.Value,"BackgroundColor3"}
+	OptionAsset.LayoutOrder = Order
+	OptionAsset.Parent = ScrollingFrame
+	OptionAsset.ZIndex = 102
+	OptionAsset.Active = true
+	OptionAsset.Visible = true
+	OptionAsset.Title.Text = Option.Name
+	OptionAsset.Title.TextColor3 = Color3.fromRGB(255,255,255)
+	OptionAsset.Title.TextTransparency = 0
+	OptionAsset.Title.TextStrokeTransparency = 0.8
+	OptionAsset.Title.Visible = true
+	OptionAsset.Tick.BackgroundColor3 = Option.Value
+		and Window.Color or Color3.fromRGB(60,60,60)
+	OptionAsset.Tick.ZIndex = 102		Option.ColorConfig = {Option.Value,"BackgroundColor3"}
 		Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
 		if AddToList then table.insert(Dropdown.List,Option) end
 
