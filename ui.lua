@@ -1411,10 +1411,37 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 		end
 	end
 
+	local DropdownTouchStart, DropdownStartTime = nil, nil
+	local DropdownIsDragging = false
+
 	DropdownAsset.InputBegan:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1
 			or Input.UserInputType == Enum.UserInputType.Touch then
-			ToggleDropdown()
+			DropdownTouchStart = Input.Position
+			DropdownStartTime = tick()
+			DropdownIsDragging = false
+		end
+	end)
+
+	DropdownAsset.InputChanged:Connect(function(Input)
+		if DropdownTouchStart and (Input.UserInputType == Enum.UserInputType.MouseMovement
+			or Input.UserInputType == Enum.UserInputType.Touch) then
+			local Delta = (Input.Position - DropdownTouchStart).Magnitude
+			if Delta > 5 then
+				DropdownIsDragging = true
+			end
+		end
+	end)
+
+	DropdownAsset.InputEnded:Connect(function(Input)
+		if (Input.UserInputType == Enum.UserInputType.MouseButton1
+			or Input.UserInputType == Enum.UserInputType.Touch) and DropdownTouchStart then
+			local Duration = tick() - DropdownStartTime
+			if not DropdownIsDragging and Duration < 0.3 then
+				ToggleDropdown()
+			end
+			DropdownTouchStart = nil
+			DropdownIsDragging = false
 		end
 	end)
 
@@ -1493,19 +1520,46 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 		Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
 		if AddToList then table.insert(Dropdown.List,Option) end
 
+		local OptionTouchStart, OptionStartTime = nil, nil
+		local OptionIsDragging = false
+
 		local function SelectOption()
 			Option.Value = not Option.Value
 		end
 
-		OptionAsset.MouseButton1Click:Connect(SelectOption)
+		OptionAsset.InputBegan:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseButton1
+				or Input.UserInputType == Enum.UserInputType.Touch then
+				OptionTouchStart = Input.Position
+				OptionStartTime = tick()
+				OptionIsDragging = false
+			end
+		end)
+
+		OptionAsset.InputChanged:Connect(function(Input)
+			if OptionTouchStart and (Input.UserInputType == Enum.UserInputType.MouseMovement
+				or Input.UserInputType == Enum.UserInputType.Touch) then
+				local Delta = (Input.Position - OptionTouchStart).Magnitude
+				if Delta > 10 then
+					OptionIsDragging = true
+				end
+			end
+		end)
+
+		OptionAsset.InputEnded:Connect(function(Input)
+			if (Input.UserInputType == Enum.UserInputType.MouseButton1
+				or Input.UserInputType == Enum.UserInputType.Touch) and OptionTouchStart then
+				local Duration = tick() - OptionStartTime
+				if not OptionIsDragging and Duration < 0.3 then
+					SelectOption()
+				end
+				OptionTouchStart = nil
+				OptionIsDragging = false
+			end
+		end)
 
 		if UserInputService.TouchEnabled then
 			OptimizeForMobile(OptionAsset,false)
-			OptionAsset.InputBegan:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.Touch then
-					SelectOption()
-				end
-			end)
 		end
 
 		OptionAsset.Title:GetPropertyChangedSignal("TextBounds"):Connect(function()
