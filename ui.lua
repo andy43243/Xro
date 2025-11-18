@@ -1462,21 +1462,34 @@ function Assets:Dropdown(Parent,ScreenAsset,Window,Dropdown)
 	Option.Object = OptionAsset
 
 	OptionAsset.LayoutOrder = Order
-	OptionAsset.Parent = ScrollingFrame
 	OptionAsset.ZIndex = 102
 	OptionAsset.Active = true
 	OptionAsset.Visible = true
-	OptionAsset.Title.Text = Option.Name
-	OptionAsset.Title.ZIndex = 103
-	OptionAsset.Title.TextColor3 = Color3.fromRGB(255,255,255)
-	OptionAsset.Title.TextTransparency = 0
-	OptionAsset.Title.TextStrokeTransparency = 0.8
-	OptionAsset.Title.TextStrokeColor3 = Color3.fromRGB(0,0,0)
-	OptionAsset.Title.Visible = true
-	OptionAsset.Title.BackgroundTransparency = 1
-	OptionAsset.Tick.BackgroundColor3 = Option.Value
-		and Window.Color or Color3.fromRGB(60,60,60)
-	OptionAsset.Tick.ZIndex = 103		Option.ColorConfig = {Option.Value,"BackgroundColor3"}
+	OptionAsset.BackgroundTransparency = 0.95
+	OptionAsset.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	
+	if OptionAsset:FindFirstChild("Title") then
+		OptionAsset.Title.Text = Option.Name
+		OptionAsset.Title.ZIndex = 103
+		OptionAsset.Title.TextColor3 = Color3.fromRGB(255,255,255)
+		OptionAsset.Title.TextTransparency = 0
+		OptionAsset.Title.TextStrokeTransparency = 0.5
+		OptionAsset.Title.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+		OptionAsset.Title.Visible = true
+		OptionAsset.Title.BackgroundTransparency = 1
+		OptionAsset.Title.TextSize = 14
+	end
+	
+	if OptionAsset:FindFirstChild("Tick") then
+		OptionAsset.Tick.BackgroundColor3 = Option.Value
+			and Window.Color or Color3.fromRGB(60,60,60)
+		OptionAsset.Tick.ZIndex = 103
+		OptionAsset.Tick.Visible = true
+	end
+	
+	OptionAsset.Parent = ScrollingFrame
+
+	Option.ColorConfig = {Option.Value,"BackgroundColor3"}
 		Window.Colorable[OptionAsset.Tick] = Option.ColorConfig
 		if AddToList then table.insert(Dropdown.List,Option) end
 
