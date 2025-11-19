@@ -362,7 +362,45 @@ function Assets:Screen()
 	if not IsLocal then sethiddenproperty(ScreenAsset,"OnTopOfCoreBlur",true) end
 	ScreenAsset.Name = "Bracket " .. game:GetService("HttpService"):GenerateGUID(false)
 	ScreenAsset.Parent = IsLocal and LocalPlayer:FindFirstChildOfClass("PlayerGui") or CoreGui
-	return {ScreenAsset = ScreenAsset,TableToColor = TableToColor}
+	
+	-- Create mobile toggle button
+	local ToggleButton = Instance.new("TextButton")
+	ToggleButton.Name = "MobileToggle"
+	ToggleButton.Size = UDim2.new(0, 60, 0, 60)
+	ToggleButton.Position = UDim2.new(0, 10, 0.5, -30)
+	ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	ToggleButton.BorderSizePixel = 2
+	ToggleButton.BorderColor3 = Color3.fromRGB(255, 127, 64)
+	ToggleButton.Text = "☰"
+	ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ToggleButton.TextSize = 32
+	ToggleButton.Font = Enum.Font.GothamBold
+	ToggleButton.ZIndex = 1000
+	ToggleButton.Active = true
+	ToggleButton.Parent = ScreenAsset
+	
+	-- Add corner rounding
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0, 12)
+	Corner.Parent = ToggleButton
+	
+	-- Add stroke for better visibility
+	local Stroke = Instance.new("UIStroke")
+	Stroke.Color = Color3.fromRGB(255, 127, 64)
+	Stroke.Thickness = 2
+	Stroke.Parent = ToggleButton
+	
+	-- Make draggable with touch support
+	MakeDraggable(ToggleButton, ToggleButton, function(Position)
+		ToggleButton.Position = Position
+	end)
+	
+	-- Optimize for mobile
+	if UserInputService.TouchEnabled then
+		OptimizeForMobile(ToggleButton, true)
+	end
+	
+	return {ScreenAsset = ScreenAsset, TableToColor = TableToColor, ToggleButton = ToggleButton}
 end
 function Assets:Window(ScreenAsset,Window)
 	local WindowAsset = GetAsset("Window/Window")
@@ -391,6 +429,49 @@ function Assets:Window(ScreenAsset,Window)
 			WindowAsset.TabButtonContainer.ListLayout.AbsoluteContentSize.X,0
 		)
 	end)
+	
+	-- Set up mobile toggle button click handler
+	local ToggleButton = ScreenAsset:FindFirstChild("MobileToggle")
+	if ToggleButton then
+		local toggleTouchStart, toggleStartTime = nil, nil
+		local toggleIsDragging = false
+		
+		ToggleButton.InputBegan:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 or 
+			   Input.UserInputType == Enum.UserInputType.Touch then
+				toggleTouchStart = Input.Position
+				toggleStartTime = tick()
+				toggleIsDragging = false
+			end
+		end)
+		
+		ToggleButton.InputChanged:Connect(function(Input)
+			if toggleTouchStart and (Input.UserInputType == Enum.UserInputType.MouseMovement or 
+			   Input.UserInputType == Enum.UserInputType.Touch) then
+				local Delta = (Input.Position - toggleTouchStart).Magnitude
+				if Delta > 10 then
+					toggleIsDragging = true
+				end
+			end
+		end)
+		
+		ToggleButton.InputEnded:Connect(function(Input)
+			if (Input.UserInputType == Enum.UserInputType.MouseButton1 or 
+			    Input.UserInputType == Enum.UserInputType.Touch) and toggleTouchStart then
+				local Duration = tick() - toggleStartTime
+				-- Only toggle if it was a tap (not a drag) and quick
+				if not toggleIsDragging and Duration < 0.3 then
+					Window.Enabled = not Window.Enabled
+				end
+				toggleTouchStart = nil
+				toggleIsDragging = false
+			end
+		end)
+		
+		-- Set initial button appearance
+		ToggleButton.Text = Window.Enabled and "✕" or "☰"
+		ToggleButton.BackgroundColor3 = Window.Enabled and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(30, 30, 30)
+	end
 
 	UserInputService.InputChanged:Connect(function(Input)
 		if WindowAsset.Visible and Input.UserInputType == Enum.UserInputType.MouseMovement then
@@ -414,6 +495,13 @@ function Assets:Window(ScreenAsset,Window)
 					Object.Visible = false
 				end
 			end
+		end
+		
+		-- Update toggle button appearance when window visibility changes
+		local ToggleButton = ScreenAsset:FindFirstChild("MobileToggle")
+		if ToggleButton then
+			ToggleButton.Text = Enabled and "✕" or "☰"
+			ToggleButton.BackgroundColor3 = Enabled and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(30, 30, 30)
 		end
 	end)
 	Window:GetPropertyChangedSignal("Blur"):Connect(function(Blur)
