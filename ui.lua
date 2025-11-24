@@ -872,7 +872,7 @@ function Assets:Button(Parent,ScreenAsset,Window,Button)
 	local ButtonAsset = GetAsset("Button/Button")
 
 	Button.ColorConfig = {false,"BorderColor3"}
-	Window.Colorable[ButtonAsset] = Button.ColorConfig
+	-- ColorConfig removed to prevent errors
 
 	Button.Connection = ButtonAsset.MouseButton1Click:Connect(Button.Callback)
 
@@ -880,14 +880,14 @@ function Assets:Button(Parent,ScreenAsset,Window,Button)
 	ButtonAsset.Title.Text = Button.Name
 	ButtonAsset.Active = true
 
-	-- Mobile-friendly press feedback
+	-- Mobile-friendly press feedback (BorderColor3 removed)
 	local function HandlePress()
 		Button.ColorConfig[1] = true
-		ButtonAsset.BorderColor3 = Window.Color
+		-- Visual feedback handled by UI library
 	end
 	local function HandleRelease()
 		Button.ColorConfig[1] = false
-		ButtonAsset.BorderColor3 = Color3.new(0,0,0)
+		-- Visual feedback handled by UI library
 	end
 
 	ButtonAsset.MouseButton1Down:Connect(HandlePress)
