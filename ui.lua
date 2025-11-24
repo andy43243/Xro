@@ -935,8 +935,11 @@ function Assets:Toggle(Parent,ScreenAsset,Window,Toggle)
 	ToggleAsset.Active = true
 	ToggleAsset.Title.Text = Toggle.Name
 	pcall(function()
-		ToggleAsset.Tick.BackgroundColor3 = Toggle.Value
-			and Window.Color or Color3.fromRGB(60,60,60)
+		local color = Toggle.Value and Window.Color or Color3.fromRGB(60,60,60)
+		if typeof(color) == "table" then
+			color = Color3.fromRGB(color[1] or 0, color[2] or 255, color[3] or 0)
+		end
+		ToggleAsset.Tick.BackgroundColor3 = color
 	end)
 
 	-- Works for both mouse and touch
@@ -954,8 +957,11 @@ function Assets:Toggle(Parent,ScreenAsset,Window,Toggle)
 	Toggle:GetPropertyChangedSignal("Value"):Connect(function(Value)
 		Toggle.ColorConfig[1] = Value
 		pcall(function()
-			ToggleAsset.Tick.BackgroundColor3 = Value
-				and Window.Color or Color3.fromRGB(60,60,60)
+			local color = Value and Window.Color or Color3.fromRGB(60,60,60)
+			if typeof(color) == "table" then
+				color = Color3.fromRGB(color[1] or 0, color[2] or 255, color[3] or 0)
+			end
+			ToggleAsset.Tick.BackgroundColor3 = color
 		end)
 		Window.Flags[Toggle.Flag] = Value
 		Toggle.Callback(Value)
