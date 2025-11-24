@@ -518,7 +518,11 @@ function Assets:Window(ScreenAsset,Window)
 	end)
 	Window:GetPropertyChangedSignal("Color"):Connect(function(Color)
 		for Object,ColorConfig in pairs(Window.Colorable) do
-			if ColorConfig[1] then Object[ColorConfig[2]] = Color end
+			pcall(function()
+				if ColorConfig[1] and Object and ColorConfig[2] then
+					Object[ColorConfig[2]] = Color
+				end
+			end)
 		end
 	end)
 
@@ -930,8 +934,10 @@ function Assets:Toggle(Parent,ScreenAsset,Window,Toggle)
 	ToggleAsset.Parent = Parent
 	ToggleAsset.Active = true
 	ToggleAsset.Title.Text = Toggle.Name
-	ToggleAsset.Tick.BackgroundColor3 = Toggle.Value
-		and Window.Color or Color3.fromRGB(60,60,60)
+	pcall(function()
+		ToggleAsset.Tick.BackgroundColor3 = Toggle.Value
+			and Window.Color or Color3.fromRGB(60,60,60)
+	end)
 
 	-- Works for both mouse and touch
 	ToggleAsset.MouseButton1Click:Connect(function()
@@ -947,8 +953,10 @@ function Assets:Toggle(Parent,ScreenAsset,Window,Toggle)
 	end)
 	Toggle:GetPropertyChangedSignal("Value"):Connect(function(Value)
 		Toggle.ColorConfig[1] = Value
-		ToggleAsset.Tick.BackgroundColor3 = Value
-			and Window.Color or Color3.fromRGB(60,60,60)
+		pcall(function()
+			ToggleAsset.Tick.BackgroundColor3 = Value
+				and Window.Color or Color3.fromRGB(60,60,60)
+		end)
 		Window.Flags[Toggle.Flag] = Value
 		Toggle.Callback(Value)
 	end)
